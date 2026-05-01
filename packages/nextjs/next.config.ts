@@ -14,16 +14,12 @@ const nextConfig: NextConfig = {
     config.externals.push("pino-pretty", "lokijs", "encoding");
     return config;
   },
-};
-
-const isIpfs = process.env.NEXT_PUBLIC_IPFS_BUILD === "true";
-
-if (isIpfs) {
-  nextConfig.output = "export";
-  nextConfig.trailingSlash = true;
-  nextConfig.images = {
+  // Static export so we can deploy to IPFS via bgipfs.
+  output: "export",
+  trailingSlash: true,
+  images: {
     unoptimized: true,
-  };
-}
+  },
+};
 
 module.exports = nextConfig;

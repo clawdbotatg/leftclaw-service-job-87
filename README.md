@@ -1,88 +1,90 @@
-# 🏗 Scaffold-ETH 2
+# 🌧️ CLAWD Rain
 
-<h4 align="center">
-  <a href="https://docs.scaffoldeth.io">Documentation</a> |
-  <a href="https://scaffoldeth.io">Website</a>
-</h4>
+A community tipping tool for [CLAWD](https://basescan.org/token/0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07)
+holders on Base.
 
-🧪 An open-source, up-to-date toolkit for building decentralized applications (dapps) on the Ethereum blockchain. It's designed to make it easier for developers to create and deploy smart contracts and build user interfaces that interact with those contracts.
+> Pick up the umbrella or make it rain.
 
-> [!NOTE]
-> 🤖 Scaffold-ETH 2 is AI-ready! It has everything agents need to build on Ethereum. Check `.agents/`, `.claude/`, `.opencode` or `.cursor/` for more info.
+CLAWD Rain lets anyone (a "Rainmaker") tip CLAWD into the contract; one loyal
+holder is randomly selected to receive 100% of the tip. Eligibility is based on
+how long you've been registered, not how much CLAWD you hold above the floor.
 
-⚙️ Built using NextJS, RainbowKit, Foundry, Wagmi, Viem, and Typescript.
+- **Contract (Base):** `0x4b5b47903901f4b666553d905952a1880e0d0efa`
+- **CLAWD ERC-20 (Base):** `0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07`
+- **Built with:** Scaffold-ETH 2 · LeftClaw Services beta
+- **Built for:** the CLAWD community — proof of concept, not production
 
-- ✅ **Contract Hot Reload**: Your frontend auto-adapts to your smart contract as you edit it.
-- 🪝 **[Custom hooks](https://docs.scaffoldeth.io/hooks/)**: Collection of React hooks wrapper around [wagmi](https://wagmi.sh/) to simplify interactions with smart contracts with typescript autocompletion.
-- 🧱 [**Components**](https://docs.scaffoldeth.io/components/): Collection of common web3 components to quickly build your frontend.
-- 🔥 **Burner Wallet & Local Faucet**: Quickly test your application with a burner wallet and local faucet.
-- 🔐 **Integration with Wallet Providers**: Connect to different wallet providers and interact with the Ethereum network.
+## What it does
 
-![Debug Contracts tab](https://github.com/scaffold-eth/scaffold-eth-2/assets/55535804/b237af0c-5027-4849-a5c1-2e31495cccb1)
+- Connect a wallet, hold ≥ 1,000,000 CLAWD, and `register()` to step into the rain.
+- Anyone (registered or not) can `approve()` then `tip()` to make it rain.
+- The tip goes 100% to a single registered holder, weighted by how long they've
+  been in the rain (1 day = 1 ticket).
+- A registered Rainmaker cannot win their own tip (blocked on-chain).
+- Drop below 1M CLAWD and you're auto-removed on the next tip — re-register if
+  you top up.
 
-## Requirements
+## Repo layout
 
-Before you begin, you need to install the following tools:
+This is a Scaffold-ETH 2 monorepo (Foundry flavor):
 
-- [Node (>= v20.18.3)](https://nodejs.org/en/download/)
-- Yarn ([v1](https://classic.yarnpkg.com/en/docs/install/) or [v2+](https://yarnpkg.com/getting-started/install))
-- [Git](https://git-scm.com/downloads)
+- `packages/foundry/contracts/ClawdRain.sol` — the tipping contract (audited, see
+  `audits/CONTRACT_AUDIT.md` for the Stage 3 report and Stage 4 resolutions).
+- `packages/nextjs/` — the Next.js + RainbowKit frontend, configured for static
+  export and IPFS deploy via [bgipfs](https://github.com/BuidlGuidl/bgipfs).
+- `packages/nextjs/contracts/deployedContracts.ts` — auto-generated ABI + address
+  for the live deployment on Base mainnet (chain `8453`).
+- `packages/nextjs/contracts/externalContracts.ts` — manually curated CLAWD
+  ERC-20 entry, including OZ v5 custom errors so the frontend can decode
+  `ERC20InsufficientAllowance`, `ERC20InsufficientBalance`, etc.
 
-## Quickstart
+## Run locally
 
-To get started with Scaffold-ETH 2, follow the steps below:
-
-1. Install dependencies if it was skipped in CLI:
-
-```
-cd my-dapp-example
+```bash
+# 1. Install dependencies
 yarn install
+
+# 2. Run the frontend against Base mainnet (the contract is already deployed)
+cd packages/nextjs
+yarn dev
+# Visit http://localhost:3000
 ```
 
-2. Run a local network in the first terminal:
+The dev server will read CLAWD/ClawdRain state from Base mainnet via the
+configured Alchemy RPC. To re-deploy or change the contract, see the SE-2 docs
+or the Foundry script under `packages/foundry/script/`.
 
-```
-yarn chain
-```
+## Build for IPFS
 
-This command starts a local Ethereum network using Foundry. The network runs on your local machine and can be used for testing and development. You can customize the network configuration in `packages/foundry/foundry.toml`.
-
-3. On a second terminal, deploy the test contract:
-
-```
-yarn deploy
+```bash
+cd packages/nextjs
+yarn build
+# Output: packages/nextjs/out/
 ```
 
-This command deploys a test smart contract to the local network. The contract is located in `packages/foundry/contracts` and can be modified to suit your needs. The `yarn deploy` command uses the deploy script located in `packages/foundry/script` to deploy the contract to the network. You can also customize the deploy script.
+The build is configured for static export (`output: "export"`,
+`trailingSlash: true`) and includes a localStorage polyfill at build time so
+SE-2 internals don't crash during prerender.
 
-4. On a third terminal, start your NextJS app:
+## Limitations & next steps
 
-```
-yarn start
-```
+This is a v1 proof of concept. Things a production version should add:
 
-Visit your app on: `http://localhost:3000`. You can interact with your smart contract using the `Debug Contracts` page. You can tweak the app config in `packages/nextjs/scaffold.config.ts`.
+- **Chainlink VRF v2.5 randomness** in place of `block.prevrandao`-mixed entropy.
+  The current scheme is documented as insecure-against-grinding in
+  `audits/CONTRACT_AUDIT.md`.
+- **larv.ai staking integration.** The current eligibility check only counts
+  CLAWD held in the connected wallet — `larv.ai` stakers are excluded unless
+  they also keep 1M in their wallet. A production fork can read
+  `totalStaked()` / `getActiveStakes()` from the larv.ai staking contract
+  (`0xC9E377FB98a1aA6Ecf4B553cE1b57940121213bf`) to give stakers their real
+  weighted duration.
+- **Paginated cleanup.** `tip()` iterates the registered-user array up to three
+  times. Practical cap is ~500–1,000 registrants before tipping becomes
+  uneconomic on Base. A future version should expose a `cleanup(start, count)`
+  entry point.
 
-Run smart contract test with `yarn foundry:test`
-
-- Edit your smart contracts in `packages/foundry/contracts`
-- Edit your frontend homepage at `packages/nextjs/app/page.tsx`. For guidance on [routing](https://nextjs.org/docs/app/building-your-application/routing/defining-routes) and configuring [pages/layouts](https://nextjs.org/docs/app/building-your-application/routing/pages-and-layouts) checkout the Next.js documentation.
-- Edit your deployment scripts in `packages/foundry/script`
-
-
-## Documentation
-
-Visit our [docs](https://docs.scaffoldeth.io) to learn how to start building with Scaffold-ETH 2.
-
-To know more about its features, check out our [website](https://scaffoldeth.io).
-
-## Contributing to Scaffold-ETH 2
-
-We welcome contributions to Scaffold-ETH 2!
-
-Please see [CONTRIBUTING.MD](https://github.com/scaffold-eth/scaffold-eth-2/blob/main/CONTRIBUTING.md) for more information and guidelines for contributing to Scaffold-ETH 2.
-
-## Security Notes (CLAWD Rain)
+## Security Notes
 
 CLAWD Rain is a community-built tipping prototype. The contract is small, has no
 admin/owner/upgrade path, and follows checks-effects-interactions throughout — but
@@ -100,30 +102,17 @@ there are a few documented limitations a user/integrator should be aware of:
   recipient can still bias outcomes. For higher-stakes use, swap the entropy
   source for Chainlink VRF v2.5 on Base
   (`0xd5D517aBE5cF79B7e95eC98dB0f0277788aFF634`) or move to a commit-reveal
-  scheme. This is acknowledged in the project spec; the prototype intentionally
-  trades full unpredictability for simplicity at $22+ tip stakes.
+  scheme.
 - **O(N) cleanup pass.** `tip()` iterates the `registeredUsers` array up to three
-  times (cleanup pass, totalWeight sum, winner walk). The first user to tip
-  after a long quiet period bears the gas cost of cleaning every stale
-  registration. The contract has no separate `cleanup()` entry point and no
-  pagination — practical user cap is approximately 500–1,000 registrants before
-  tipping becomes uneconomic on Base. This is acceptable for a community-scale
-  tool; a production version should add a paginated cleanup or amortize via a
-  separate function.
+  times (cleanup pass, totalWeight sum, winner walk).
 - **Standard ERC20 only.** The contract assumes the configured ERC20 (CLAWD on
   Base) behaves as a vanilla ERC20: no fee-on-transfer, no rebasing, no
-  transfer hooks/callbacks. Forks pointing at non-standard tokens may
-  misreport amounts or aggressively kick users on negative rebases.
-- **`getRegisteredUsers()` returns the full array.** At thousands of entries the
-  RPC return size grows unboundedly. Frontends should subscribe to the
-  `SteppedIntoTheRain` / `LeftTheRain` / `DroppedBelowThreshold` events and
-  maintain a local list rather than polling the full array.
+  transfer hooks/callbacks.
+- **`getRegisteredUsers()` returns the full array.** Frontends should rely on
+  events for large registrant counts.
 - **Custom error decoding.** `tip()` failures may surface either `ClawdRain`
   custom errors (`TipTooSmall`, `MessageTooLong`, `NoEligibleUsers`,
-  `SelfTipNotAllowed`) or OpenZeppelin v5 `IERC20` custom errors
-  (`ERC20InsufficientAllowance`, `ERC20InsufficientBalance`,
-  `ERC20InvalidSender`, `ERC20InvalidReceiver`). Frontends must include both
-  ABIs to surface decoded error reasons.
+  `SelfTipNotAllowed`) or OpenZeppelin v5 `IERC20` custom errors. The frontend
+  in this repo includes both ABIs.
 
-For a full audit report and the Stage 4 resolution log, see
-[`audits/CONTRACT_AUDIT.md`](./audits/CONTRACT_AUDIT.md).
+For the full audit report, see [`audits/CONTRACT_AUDIT.md`](./audits/CONTRACT_AUDIT.md).

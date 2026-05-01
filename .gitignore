@@ -21,3 +21,14 @@ node_modules
 
 # cli
 dist
+
+# next.js / static export
+.next
+packages/nextjs/.next
+packages/nextjs/out
+packages/nextjs/tsconfig.tsbuildinfo
+
+# env
+.env
+.env.local
+.env.*.local

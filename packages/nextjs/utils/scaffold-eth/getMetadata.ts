@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 
-const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
-  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-  : `http://localhost:${process.env.PORT || 3000}`;
-const titleTemplate = "%s | Scaffold-ETH 2";
+const baseUrl = process.env.NEXT_PUBLIC_PRODUCTION_URL
+  ? process.env.NEXT_PUBLIC_PRODUCTION_URL
+  : process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : `http://localhost:${process.env.PORT || 3000}`;
+const titleTemplate = "%s | CLAWD Rain";
 
 export const getMetadata = ({
   title,
@@ -43,14 +45,6 @@ export const getMetadata = ({
       description: description,
       images: [imageUrl],
     },
-    icons: {
-      icon: [
-        {
-          url: "/favicon.png",
-          sizes: "32x32",
-          type: "image/png",
-        },
-      ],
-    },
+    // Icons resolve via app/icon.svg (Next.js file-based icon convention).
   };
 };
