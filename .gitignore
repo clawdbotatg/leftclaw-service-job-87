@@ -32,3 +32,6 @@ packages/nextjs/tsconfig.tsbuildinfo
 .env
 .env.local
 .env.*.local
+
+# bgipfs
+ipfs-upload.config.json

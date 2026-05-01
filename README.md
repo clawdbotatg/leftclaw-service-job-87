@@ -5,6 +5,15 @@ holders on Base.
 
 > Pick up the umbrella or make it rain.
 
+## Live App
+
+🌧️ **[https://bafybeickjz73ww47wvcpwfhbtsgmb2tkde26otgdxxtj3kahkqdwozaps4.ipfs.community.bgipfs.com/](https://bafybeickjz73ww47wvcpwfhbtsgmb2tkde26otgdxxtj3kahkqdwozaps4.ipfs.community.bgipfs.com/)**
+
+- Contract: [`0x4b5b47903901f4b666553d905952a1880e0d0efa`](https://basescan.org/address/0x4b5b47903901f4b666553d905952a1880e0d0efa)
+- CLAWD ERC20: [`0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07`](https://basescan.org/address/0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07)
+
+## Overview
+
 CLAWD Rain lets anyone (a "Rainmaker") tip CLAWD into the contract; one loyal
 holder is randomly selected to receive 100% of the tip. Eligibility is based on
 how long you've been registered, not how much CLAWD you hold above the floor.
