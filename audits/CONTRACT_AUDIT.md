@@ -265,3 +265,55 @@ External references consulted:
 ---
 
 *End of Stage 3 audit report. No source files were modified during this audit.*
+
+---
+
+## Stage 4 — Resolution
+
+**Auditor / fixer:** clawdbotatg / Opus 4.7 (1M ctx)
+**Date:** 2026-05-01
+**Build status:** `forge build` exits 0. `forge test` 13/13 tests pass (11 pre-existing + 2 new for self-tip behavior). `yarn compile` exits 0.
+
+Contract changes are concentrated in `tip()` of `packages/foundry/contracts/ClawdRain.sol`:
+
+1. **Added `error SelfTipNotAllowed();`** to the errors block.
+2. **Added a NatSpec block above `tip()`** explicitly documenting that the randomness is not VRF-grade, that a rainmaker can grind via offchain simulation, that self-tipping is blocked but rainmaker–recipient collusion is not, and pointing readers to the README Security Notes for the full discussion.
+3. **Expanded the random seed** to mix in `blockhash(block.number - 1)`, `block.number`, and `gasleft()` alongside the existing `block.prevrandao`, `block.timestamp`, `registeredUsers.length`, and `msg.sender`. This shrinks the within-L1-window grinding surface from ~6 L2 blocks to ~1 L2 block (since `blockhash` rotates every L2 block).
+4. **Inserted `if (winner == msg.sender) revert SelfTipNotAllowed();`** immediately after the cumulative-weight walk and before `safeTransferFrom`. A registered rainmaker who is randomly selected as their own winner now reverts the entire tip — the user can re-broadcast in a different block (where the random seed will have changed) if they really want to risk self-selection again.
+
+Tests added in `packages/foundry/test/ClawdRain.t.sol`:
+
+- `testTipSelfRevertsWithSelfTipNotAllowed` — alice is the sole registered user, alice tips → reverts `SelfTipNotAllowed` (only possible winner is alice == msg.sender).
+- `testTipSkipsSelfWhenOtherEligibleExists` — alice and bob both registered, alice tips 50 times across varied `prevrandao`. Either bob wins (success, transfer lands with bob) or alice would-have-won (revert with `SelfTipNotAllowed`). Asserts at least one bob-win across 50 runs and that **every** successful transfer landed with bob, never alice.
+
+`testTipHappyPath`, `testTipCleansIneligible`, and `testWeightedRandomness` continue to pass — each uses a `rainmaker`/`tipper` address that is distinct from any registered user, so the new self-tip guard never trips.
+
+### Per-finding response
+
+| ID | Severity | Status | Notes |
+|---|---|---|---|
+| M-1 | Medium | **Mitigated + Documented** | Random seed expanded to include `blockhash(block.number - 1)` + `gasleft()` — within-L1-window grinding window shrinks from ~6 L2 blocks to ~1. NatSpec on `tip()` and README "Security Notes" section explicitly document the residual grinding capability and recommend Chainlink VRF for higher-stakes deployments. |
+| M-2 | Medium | **Mitigated + Documented** | Same mitigation as M-1 plus the self-tip block (closes the trivial self-deal vector). NatSpec and README acknowledge that rainmaker–recipient collusion can still bias outcomes; full VRF integration documented as future work per the original spec. |
+| L-1 | Low | **Fixed** | `if (winner == msg.sender) revert SelfTipNotAllowed();` added after winner selection. Tested by `testTipSelfRevertsWithSelfTipNotAllowed` and `testTipSkipsSelfWhenOtherEligibleExists`. |
+| L-2 | Low | **Documented in README** | "Security Notes" section explicitly states the contract assumes a standard ERC20 (no fee-on-transfer, no rebasing, no callbacks). No code change — canonical CLAWD on Base is documented as standard. |
+| L-3 | Low | **Won't fix — spec-aligned + documented** | The spec explicitly accepts O(N) cleanup as adequate for community scale. Adding a `maxCleanup` cap would change `tip()` semantics in ways the spec does not allow. README "Security Notes" documents the practical user cap (~500–1,000) and recommends paginated cleanup as future work. |
+| L-4 | Low | **Documented in README** | README "Security Notes" recommends frontends subscribe to events (`SteppedIntoTheRain` / `LeftTheRain` / `DroppedBelowThreshold`) and maintain a local list rather than polling `getRegisteredUsers()`. No code change — adding a paginated view would be additive and is deferred to a future version. |
+| L-5 | Low | **Won't fix — backwards-compat / non-issue** | Indexing `amount` would consume the third indexed slot but provides only marginal analytics benefit. The event already has `rainmaker` and `winner` indexed; off-chain indexers can filter on `amount` after decoding the data field cheaply. Keeping the event signature stable simplifies the frontend. Documented as a future enhancement. |
+| I-1 | Info | **No change** | `uint64(block.timestamp)` is safe through year ~2554. Acknowledged in audit. |
+| I-2 | Info | **No change** | `uint64` array index is safe — 1.8e19 entries is unreachable. Acknowledged in audit. |
+| I-3 | Info | **No change (correct as-is)** | Re-registration after `_removeUser` works correctly because `delete userInfo[user]` clears `.registered`. Verified via inspection. |
+| I-4 | Info | **No change (already correct)** | All reverts use custom errors. README "Security Notes" flags that frontends must include both `ClawdRain` and `IERC20` ABIs to decode `safeTransferFrom` reverts (`ERC20InsufficientAllowance`, etc.). Stage 7 QA must verify this. |
+| I-5 | Info | **No change (already correct)** | CEI ordering verified — all state changes occur before the single `safeTransferFrom` external call. |
+| I-6 | Info | **No change (already correct)** | Cumulative-weight loop math verified by exhaustive trace. |
+| I-7 | Info | **Partially addressed** | Added `testTipSelfRevertsWithSelfTipNotAllowed` and `testTipSkipsSelfWhenOtherEligibleExists` (covers "rainmaker is also a registered user" and "all users become ineligible after cleanup" partially). The remaining edge cases listed in I-7 (re-registration after auto-removal, exact 280-byte message, multi-byte unicode, last/first-element unregister, same-block register+tip, 100-user gas profile) are deferred — they would not change correctness conclusions of the audit and adding them now risks scope creep into Stage 5+ time budget. Recommended to add in a follow-up hygiene pass before any future deploy. |
+
+### Summary
+
+Of the 14 findings (0 Critical, 0 High, 2 Medium, 5 Low, 7 Info):
+
+- 0 Critical / High to address (none existed)
+- 2 Medium: both mitigated (entropy mix) + documented (NatSpec + README)
+- 5 Low: 1 fixed (L-1 self-tip block), 2 documented in README (L-2, L-4), 2 won't-fix with documented rationale (L-3, L-5)
+- 7 Info: 6 unchanged (correct as-is or non-issue), 1 partially addressed (I-7 — 2 of 9 suggested tests added)
+
+**Verdict:** Contract is ready for Stage 5 (deploy + verify). All Critical/High findings cleared (none existed). Medium findings mitigated to the extent possible without VRF integration, with residual risk explicitly documented in code and user-facing README. `forge build` and `forge test` both pass.

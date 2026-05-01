@@ -81,3 +81,49 @@ To know more about its features, check out our [website](https://scaffoldeth.io)
 We welcome contributions to Scaffold-ETH 2!
 
 Please see [CONTRIBUTING.MD](https://github.com/scaffold-eth/scaffold-eth-2/blob/main/CONTRIBUTING.md) for more information and guidelines for contributing to Scaffold-ETH 2.
+
+## Security Notes (CLAWD Rain)
+
+CLAWD Rain is a community-built tipping prototype. The contract is small, has no
+admin/owner/upgrade path, and follows checks-effects-interactions throughout — but
+there are a few documented limitations a user/integrator should be aware of:
+
+- **Randomness is NOT VRF-grade.** The winner draw uses a keccak256 hash of
+  `block.prevrandao`, `blockhash(block.number - 1)`, `block.timestamp`,
+  `block.number`, `registeredUsers.length`, `msg.sender`, and `gasleft()`. On Base
+  the same `prevrandao` is exposed on roughly six consecutive L2 blocks, but
+  `blockhash` changes every L2 block, which shrinks (but does not eliminate) the
+  caller-side grinding window. A motivated rainmaker can still simulate `tip()`
+  offchain with `eth_call` against successive pending blocks and only broadcast
+  when a preferred winner is selected. **Self-tipping is blocked at the contract
+  level** (`SelfTipNotAllowed`), but a rainmaker colluding with a non-self
+  recipient can still bias outcomes. For higher-stakes use, swap the entropy
+  source for Chainlink VRF v2.5 on Base
+  (`0xd5D517aBE5cF79B7e95eC98dB0f0277788aFF634`) or move to a commit-reveal
+  scheme. This is acknowledged in the project spec; the prototype intentionally
+  trades full unpredictability for simplicity at $22+ tip stakes.
+- **O(N) cleanup pass.** `tip()` iterates the `registeredUsers` array up to three
+  times (cleanup pass, totalWeight sum, winner walk). The first user to tip
+  after a long quiet period bears the gas cost of cleaning every stale
+  registration. The contract has no separate `cleanup()` entry point and no
+  pagination — practical user cap is approximately 500–1,000 registrants before
+  tipping becomes uneconomic on Base. This is acceptable for a community-scale
+  tool; a production version should add a paginated cleanup or amortize via a
+  separate function.
+- **Standard ERC20 only.** The contract assumes the configured ERC20 (CLAWD on
+  Base) behaves as a vanilla ERC20: no fee-on-transfer, no rebasing, no
+  transfer hooks/callbacks. Forks pointing at non-standard tokens may
+  misreport amounts or aggressively kick users on negative rebases.
+- **`getRegisteredUsers()` returns the full array.** At thousands of entries the
+  RPC return size grows unboundedly. Frontends should subscribe to the
+  `SteppedIntoTheRain` / `LeftTheRain` / `DroppedBelowThreshold` events and
+  maintain a local list rather than polling the full array.
+- **Custom error decoding.** `tip()` failures may surface either `ClawdRain`
+  custom errors (`TipTooSmall`, `MessageTooLong`, `NoEligibleUsers`,
+  `SelfTipNotAllowed`) or OpenZeppelin v5 `IERC20` custom errors
+  (`ERC20InsufficientAllowance`, `ERC20InsufficientBalance`,
+  `ERC20InvalidSender`, `ERC20InvalidReceiver`). Frontends must include both
+  ABIs to surface decoded error reasons.
+
+For a full audit report and the Stage 4 resolution log, see
+[`audits/CONTRACT_AUDIT.md`](./audits/CONTRACT_AUDIT.md).

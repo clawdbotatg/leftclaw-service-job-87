@@ -205,6 +205,75 @@ contract ClawdRainTest is Test {
         assertEq(clawd.balanceOf(alice), MIN_BALANCE + MIN_TIP);
     }
 
+    // --- self-tip block (audit Stage 4 / L-1) ---
+
+    function testTipSelfRevertsWithSelfTipNotAllowed() public {
+        // Only alice is registered. Alice tries to tip herself — must revert SelfTipNotAllowed
+        // because the only possible winner is alice == msg.sender.
+        clawd.mint(alice, MIN_BALANCE + MIN_TIP);
+        vm.prank(alice);
+        rain.register();
+
+        vm.prank(alice);
+        clawd.approve(address(rain), MIN_TIP);
+
+        vm.prank(alice);
+        vm.expectRevert(ClawdRain.SelfTipNotAllowed.selector);
+        rain.tip(MIN_TIP, "self?");
+    }
+
+    function testTipSkipsSelfWhenOtherEligibleExists() public {
+        // Register alice and bob. Alice tips. Self-win blocks the tip with a revert
+        // (we don't auto-pick another user — see audit L-1 fix). So:
+        //   - When the random walk lands on bob, the tip succeeds and bob receives.
+        //   - When it lands on alice, the tip reverts with SelfTipNotAllowed.
+        // Across many runs we should observe at least one successful bob-win, and
+        // EVERY token transfer must land with bob (never with alice).
+        clawd.mint(alice, MIN_BALANCE + 100 * MIN_TIP);
+        clawd.mint(bob, MIN_BALANCE);
+
+        vm.prank(alice);
+        rain.register();
+        vm.warp(block.timestamp + 50);
+        vm.prank(bob);
+        rain.register();
+
+        vm.prank(alice);
+        clawd.approve(address(rain), 100 * MIN_TIP);
+
+        uint256 aliceBalanceBefore = clawd.balanceOf(alice);
+        uint256 bobBefore = clawd.balanceOf(bob);
+        uint256 successCount;
+        uint256 runs = 50;
+
+        for (uint256 i = 0; i < runs; i++) {
+            // Vary randomness so we exercise both "alice would have won" and
+            // "bob would have won" branches of the cumulative walk.
+            vm.warp(block.timestamp + 1);
+            vm.prevrandao(bytes32(uint256(0xBEEF + i)));
+
+            vm.prank(alice);
+            try rain.tip(MIN_TIP, "") {
+                successCount++;
+            } catch (bytes memory err) {
+                // Only acceptable revert is SelfTipNotAllowed — alice was the
+                // randomly-selected winner.
+                bytes4 sel;
+                assembly {
+                    sel := mload(add(err, 32))
+                }
+                assertEq(sel, ClawdRain.SelfTipNotAllowed.selector, "unexpected revert");
+            }
+        }
+
+        // Some tips must have succeeded (bob won at least once across 50 runs with
+        // varied prevrandao). All successful transfers must have gone to bob.
+        assertGt(successCount, 0, "bob never won across 50 runs");
+        assertEq(clawd.balanceOf(bob), bobBefore + successCount * MIN_TIP);
+        // Alice's balance only decreases by successful tips (reverts roll back).
+        assertEq(clawd.balanceOf(alice), aliceBalanceBefore - successCount * MIN_TIP);
+    }
+
     function testWeightedRandomness() public {
         // Two registered users with different — but comparable — durations so both
         // realistically win across the loop.

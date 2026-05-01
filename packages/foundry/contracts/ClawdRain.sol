@@ -58,6 +58,7 @@ contract ClawdRain {
     error TipTooSmall();
     error MessageTooLong();
     error NoEligibleUsers();
+    error SelfTipNotAllowed();
 
     constructor(address _clawdToken) {
         clawdToken = IERC20(_clawdToken);
@@ -85,7 +86,14 @@ contract ClawdRain {
         emit LeftTheRain(msg.sender);
     }
 
-    /// @notice Tip the rain. A duration-weighted random eligible user receives `amount`.
+    /// @notice Tips CLAWD into the contract. One eligible registered user is randomly
+    ///         selected (weighted by registration duration) to receive the entire amount.
+    /// @dev Randomness: derived from block.prevrandao + blockhash + tx context. This is
+    ///      NOT VRF-grade. A motivated rainmaker can grind outcomes by simulating tip()
+    ///      offchain and only broadcasting when a preferred winner is selected. Tipping
+    ///      yourself is blocked, but a tipper colluding with a recipient could still
+    ///      bias outcomes. For higher-stakes use, integrate Chainlink VRF (out of scope
+    ///      for this prototype). See README "Security Notes" for full discussion.
     /// @dev Cleanup pass removes users who have fallen below MIN_BALANCE before drawing.
     /// @param amount     CLAWD amount to send (must be >= MIN_TIP). Caller must approve this contract.
     /// @param message    Free-form message attached to the event (<= MAX_MESSAGE_LENGTH bytes).
@@ -120,9 +128,21 @@ contract ClawdRain {
             totalWeight += d;
         }
 
-        // prevrandao + a few extra inputs for a tiny defense-in-depth nudge.
+        // Mix prevrandao with blockhash(prev L2 block), tx context, and gasleft so the
+        // grinding window shrinks to ~1 L2 block (blockhash changes every L2 block).
+        // Still NOT VRF-grade — see NatSpec above and README Security Notes.
         uint256 rand = uint256(
-            keccak256(abi.encode(block.prevrandao, block.timestamp, registeredUsers.length, msg.sender))
+            keccak256(
+                abi.encode(
+                    block.prevrandao,
+                    blockhash(block.number - 1),
+                    block.timestamp,
+                    block.number,
+                    registeredUsers.length,
+                    msg.sender,
+                    gasleft()
+                )
+            )
         ) % totalWeight;
 
         // Walk the cumulative weights to find the winner.
@@ -140,6 +160,10 @@ contract ClawdRain {
                 break;
             }
         }
+
+        // Block self-tipping — a registered rainmaker cannot win their own tip. This
+        // removes the most obvious self-deal vector and pollution of the event feed.
+        if (winner == msg.sender) revert SelfTipNotAllowed();
 
         // Pull tokens from rainmaker straight to winner.
         clawdToken.safeTransferFrom(msg.sender, winner, amount);
