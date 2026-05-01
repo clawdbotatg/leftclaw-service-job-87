@@ -1,19 +1,21 @@
-// CLAWD Rain — a community tipping tool built by a CLAWD community member
-// using LeftClaw Services beta.
-//
-// To the CLAWD core team: if you like this idea and want to build a
-// production-grade version, consider this a proof of concept — take it
-// and run with it. Would love to see it done right.
-//
-// One thing this version doesn't do: integrate with the larv.ai staking
-// contract (0xC9E377FB98a1aA6Ecf4B553cE1b57940121213bf). Eligibility here
-// is based on wallet balance, not stake — meaning larv.ai stakers aren't
-// covered unless they also hold 1M in their wallet. A production version
-// could read totalStaked() and getActiveStakes() from the larv.ai contract
-// to include stakers and use their real stake duration for weighting.
-// That's the version this community deserves.
-//
-// Use at your own risk.
+/*
+ * CLAWD Rain — a community tipping tool built by a CLAWD community member
+ * using LeftClaw Services beta.
+ *
+ * To the CLAWD core team: if you like this idea and want to build a
+ * production-grade version, consider this a proof of concept — take it
+ * and run with it. Would love to see it done right.
+ *
+ * One thing this version doesn't do: integrate with the larv.ai staking
+ * contract (0xC9E377FB98a1aA6Ecf4B553cE1b57940121213bf). Eligibility here
+ * is based on wallet balance, not stake — meaning larv.ai stakers aren't
+ * covered unless they also hold 1M in their wallet. A production version
+ * could read totalStaked() and getActiveStakes() from the larv.ai contract
+ * to include stakers and use their real stake duration for weighting.
+ * That's the version this community deserves.
+ *
+ * Use at your own risk.
+ */
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -28,175 +30,195 @@ import deployedContracts from "~~/contracts/deployedContracts";
 import { useScaffoldEventHistory, useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 import { getParsedError, notification } from "~~/utils/scaffold-eth";
 
-// CLAWD Rain — a community tipping tool built by a CLAWD community member
-// using LeftClaw Services beta.
-//
-// To the CLAWD core team: if you like this idea and want to build a
-// production-grade version, consider this a proof of concept — take it
-// and run with it. Would love to see it done right.
-//
-// One thing this version doesn't do: integrate with the larv.ai staking
-// contract (0xC9E377FB98a1aA6Ecf4B553cE1b57940121213bf). Eligibility here
-// is based on wallet balance, not stake — meaning larv.ai stakers aren't
-// covered unless they also hold 1M in their wallet. A production version
-// could read totalStaked() and getActiveStakes() from the larv.ai contract
-// to include stakers and use their real stake duration for weighting.
-// That's the version this community deserves.
-//
-// Use at your own risk.
+/*
+ * CLAWD Rain — a community tipping tool built by a CLAWD community member
+ * using LeftClaw Services beta.
+ *
+ * To the CLAWD core team: if you like this idea and want to build a
+ * production-grade version, consider this a proof of concept — take it
+ * and run with it. Would love to see it done right.
+ *
+ * One thing this version doesn't do: integrate with the larv.ai staking
+ * contract (0xC9E377FB98a1aA6Ecf4B553cE1b57940121213bf). Eligibility here
+ * is based on wallet balance, not stake — meaning larv.ai stakers aren't
+ * covered unless they also hold 1M in their wallet. A production version
+ * could read totalStaked() and getActiveStakes() from the larv.ai contract
+ * to include stakers and use their real stake duration for weighting.
+ * That's the version this community deserves.
+ *
+ * Use at your own risk.
+ */
 
-// CLAWD Rain — a community tipping tool built by a CLAWD community member
-// using LeftClaw Services beta.
-//
-// To the CLAWD core team: if you like this idea and want to build a
-// production-grade version, consider this a proof of concept — take it
-// and run with it. Would love to see it done right.
-//
-// One thing this version doesn't do: integrate with the larv.ai staking
-// contract (0xC9E377FB98a1aA6Ecf4B553cE1b57940121213bf). Eligibility here
-// is based on wallet balance, not stake — meaning larv.ai stakers aren't
-// covered unless they also hold 1M in their wallet. A production version
-// could read totalStaked() and getActiveStakes() from the larv.ai contract
-// to include stakers and use their real stake duration for weighting.
-// That's the version this community deserves.
-//
-// Use at your own risk.
+/*
+ * CLAWD Rain — a community tipping tool built by a CLAWD community member
+ * using LeftClaw Services beta.
+ *
+ * To the CLAWD core team: if you like this idea and want to build a
+ * production-grade version, consider this a proof of concept — take it
+ * and run with it. Would love to see it done right.
+ *
+ * One thing this version doesn't do: integrate with the larv.ai staking
+ * contract (0xC9E377FB98a1aA6Ecf4B553cE1b57940121213bf). Eligibility here
+ * is based on wallet balance, not stake — meaning larv.ai stakers aren't
+ * covered unless they also hold 1M in their wallet. A production version
+ * could read totalStaked() and getActiveStakes() from the larv.ai contract
+ * to include stakers and use their real stake duration for weighting.
+ * That's the version this community deserves.
+ *
+ * Use at your own risk.
+ */
 
-// CLAWD Rain — a community tipping tool built by a CLAWD community member
-// using LeftClaw Services beta.
-//
-// To the CLAWD core team: if you like this idea and want to build a
-// production-grade version, consider this a proof of concept — take it
-// and run with it. Would love to see it done right.
-//
-// One thing this version doesn't do: integrate with the larv.ai staking
-// contract (0xC9E377FB98a1aA6Ecf4B553cE1b57940121213bf). Eligibility here
-// is based on wallet balance, not stake — meaning larv.ai stakers aren't
-// covered unless they also hold 1M in their wallet. A production version
-// could read totalStaked() and getActiveStakes() from the larv.ai contract
-// to include stakers and use their real stake duration for weighting.
-// That's the version this community deserves.
-//
-// Use at your own risk.
+/*
+ * CLAWD Rain — a community tipping tool built by a CLAWD community member
+ * using LeftClaw Services beta.
+ *
+ * To the CLAWD core team: if you like this idea and want to build a
+ * production-grade version, consider this a proof of concept — take it
+ * and run with it. Would love to see it done right.
+ *
+ * One thing this version doesn't do: integrate with the larv.ai staking
+ * contract (0xC9E377FB98a1aA6Ecf4B553cE1b57940121213bf). Eligibility here
+ * is based on wallet balance, not stake — meaning larv.ai stakers aren't
+ * covered unless they also hold 1M in their wallet. A production version
+ * could read totalStaked() and getActiveStakes() from the larv.ai contract
+ * to include stakers and use their real stake duration for weighting.
+ * That's the version this community deserves.
+ *
+ * Use at your own risk.
+ */
 
-// CLAWD Rain — a community tipping tool built by a CLAWD community member
-// using LeftClaw Services beta.
-//
-// To the CLAWD core team: if you like this idea and want to build a
-// production-grade version, consider this a proof of concept — take it
-// and run with it. Would love to see it done right.
-//
-// One thing this version doesn't do: integrate with the larv.ai staking
-// contract (0xC9E377FB98a1aA6Ecf4B553cE1b57940121213bf). Eligibility here
-// is based on wallet balance, not stake — meaning larv.ai stakers aren't
-// covered unless they also hold 1M in their wallet. A production version
-// could read totalStaked() and getActiveStakes() from the larv.ai contract
-// to include stakers and use their real stake duration for weighting.
-// That's the version this community deserves.
-//
-// Use at your own risk.
+/*
+ * CLAWD Rain — a community tipping tool built by a CLAWD community member
+ * using LeftClaw Services beta.
+ *
+ * To the CLAWD core team: if you like this idea and want to build a
+ * production-grade version, consider this a proof of concept — take it
+ * and run with it. Would love to see it done right.
+ *
+ * One thing this version doesn't do: integrate with the larv.ai staking
+ * contract (0xC9E377FB98a1aA6Ecf4B553cE1b57940121213bf). Eligibility here
+ * is based on wallet balance, not stake — meaning larv.ai stakers aren't
+ * covered unless they also hold 1M in their wallet. A production version
+ * could read totalStaked() and getActiveStakes() from the larv.ai contract
+ * to include stakers and use their real stake duration for weighting.
+ * That's the version this community deserves.
+ *
+ * Use at your own risk.
+ */
 
-// CLAWD Rain — a community tipping tool built by a CLAWD community member
-// using LeftClaw Services beta.
-//
-// To the CLAWD core team: if you like this idea and want to build a
-// production-grade version, consider this a proof of concept — take it
-// and run with it. Would love to see it done right.
-//
-// One thing this version doesn't do: integrate with the larv.ai staking
-// contract (0xC9E377FB98a1aA6Ecf4B553cE1b57940121213bf). Eligibility here
-// is based on wallet balance, not stake — meaning larv.ai stakers aren't
-// covered unless they also hold 1M in their wallet. A production version
-// could read totalStaked() and getActiveStakes() from the larv.ai contract
-// to include stakers and use their real stake duration for weighting.
-// That's the version this community deserves.
-//
-// Use at your own risk.
+/*
+ * CLAWD Rain — a community tipping tool built by a CLAWD community member
+ * using LeftClaw Services beta.
+ *
+ * To the CLAWD core team: if you like this idea and want to build a
+ * production-grade version, consider this a proof of concept — take it
+ * and run with it. Would love to see it done right.
+ *
+ * One thing this version doesn't do: integrate with the larv.ai staking
+ * contract (0xC9E377FB98a1aA6Ecf4B553cE1b57940121213bf). Eligibility here
+ * is based on wallet balance, not stake — meaning larv.ai stakers aren't
+ * covered unless they also hold 1M in their wallet. A production version
+ * could read totalStaked() and getActiveStakes() from the larv.ai contract
+ * to include stakers and use their real stake duration for weighting.
+ * That's the version this community deserves.
+ *
+ * Use at your own risk.
+ */
 
-// CLAWD Rain — a community tipping tool built by a CLAWD community member
-// using LeftClaw Services beta.
-//
-// To the CLAWD core team: if you like this idea and want to build a
-// production-grade version, consider this a proof of concept — take it
-// and run with it. Would love to see it done right.
-//
-// One thing this version doesn't do: integrate with the larv.ai staking
-// contract (0xC9E377FB98a1aA6Ecf4B553cE1b57940121213bf). Eligibility here
-// is based on wallet balance, not stake — meaning larv.ai stakers aren't
-// covered unless they also hold 1M in their wallet. A production version
-// could read totalStaked() and getActiveStakes() from the larv.ai contract
-// to include stakers and use their real stake duration for weighting.
-// That's the version this community deserves.
-//
-// Use at your own risk.
+/*
+ * CLAWD Rain — a community tipping tool built by a CLAWD community member
+ * using LeftClaw Services beta.
+ *
+ * To the CLAWD core team: if you like this idea and want to build a
+ * production-grade version, consider this a proof of concept — take it
+ * and run with it. Would love to see it done right.
+ *
+ * One thing this version doesn't do: integrate with the larv.ai staking
+ * contract (0xC9E377FB98a1aA6Ecf4B553cE1b57940121213bf). Eligibility here
+ * is based on wallet balance, not stake — meaning larv.ai stakers aren't
+ * covered unless they also hold 1M in their wallet. A production version
+ * could read totalStaked() and getActiveStakes() from the larv.ai contract
+ * to include stakers and use their real stake duration for weighting.
+ * That's the version this community deserves.
+ *
+ * Use at your own risk.
+ */
 
-// CLAWD Rain — a community tipping tool built by a CLAWD community member
-// using LeftClaw Services beta.
-//
-// To the CLAWD core team: if you like this idea and want to build a
-// production-grade version, consider this a proof of concept — take it
-// and run with it. Would love to see it done right.
-//
-// One thing this version doesn't do: integrate with the larv.ai staking
-// contract (0xC9E377FB98a1aA6Ecf4B553cE1b57940121213bf). Eligibility here
-// is based on wallet balance, not stake — meaning larv.ai stakers aren't
-// covered unless they also hold 1M in their wallet. A production version
-// could read totalStaked() and getActiveStakes() from the larv.ai contract
-// to include stakers and use their real stake duration for weighting.
-// That's the version this community deserves.
-//
-// Use at your own risk.
+/*
+ * CLAWD Rain — a community tipping tool built by a CLAWD community member
+ * using LeftClaw Services beta.
+ *
+ * To the CLAWD core team: if you like this idea and want to build a
+ * production-grade version, consider this a proof of concept — take it
+ * and run with it. Would love to see it done right.
+ *
+ * One thing this version doesn't do: integrate with the larv.ai staking
+ * contract (0xC9E377FB98a1aA6Ecf4B553cE1b57940121213bf). Eligibility here
+ * is based on wallet balance, not stake — meaning larv.ai stakers aren't
+ * covered unless they also hold 1M in their wallet. A production version
+ * could read totalStaked() and getActiveStakes() from the larv.ai contract
+ * to include stakers and use their real stake duration for weighting.
+ * That's the version this community deserves.
+ *
+ * Use at your own risk.
+ */
 
-// CLAWD Rain — a community tipping tool built by a CLAWD community member
-// using LeftClaw Services beta.
-//
-// To the CLAWD core team: if you like this idea and want to build a
-// production-grade version, consider this a proof of concept — take it
-// and run with it. Would love to see it done right.
-//
-// One thing this version doesn't do: integrate with the larv.ai staking
-// contract (0xC9E377FB98a1aA6Ecf4B553cE1b57940121213bf). Eligibility here
-// is based on wallet balance, not stake — meaning larv.ai stakers aren't
-// covered unless they also hold 1M in their wallet. A production version
-// could read totalStaked() and getActiveStakes() from the larv.ai contract
-// to include stakers and use their real stake duration for weighting.
-// That's the version this community deserves.
-//
-// Use at your own risk.
+/*
+ * CLAWD Rain — a community tipping tool built by a CLAWD community member
+ * using LeftClaw Services beta.
+ *
+ * To the CLAWD core team: if you like this idea and want to build a
+ * production-grade version, consider this a proof of concept — take it
+ * and run with it. Would love to see it done right.
+ *
+ * One thing this version doesn't do: integrate with the larv.ai staking
+ * contract (0xC9E377FB98a1aA6Ecf4B553cE1b57940121213bf). Eligibility here
+ * is based on wallet balance, not stake — meaning larv.ai stakers aren't
+ * covered unless they also hold 1M in their wallet. A production version
+ * could read totalStaked() and getActiveStakes() from the larv.ai contract
+ * to include stakers and use their real stake duration for weighting.
+ * That's the version this community deserves.
+ *
+ * Use at your own risk.
+ */
 
-// CLAWD Rain — a community tipping tool built by a CLAWD community member
-// using LeftClaw Services beta.
-//
-// To the CLAWD core team: if you like this idea and want to build a
-// production-grade version, consider this a proof of concept — take it
-// and run with it. Would love to see it done right.
-//
-// One thing this version doesn't do: integrate with the larv.ai staking
-// contract (0xC9E377FB98a1aA6Ecf4B553cE1b57940121213bf). Eligibility here
-// is based on wallet balance, not stake — meaning larv.ai stakers aren't
-// covered unless they also hold 1M in their wallet. A production version
-// could read totalStaked() and getActiveStakes() from the larv.ai contract
-// to include stakers and use their real stake duration for weighting.
-// That's the version this community deserves.
-//
-// Use at your own risk.
+/*
+ * CLAWD Rain — a community tipping tool built by a CLAWD community member
+ * using LeftClaw Services beta.
+ *
+ * To the CLAWD core team: if you like this idea and want to build a
+ * production-grade version, consider this a proof of concept — take it
+ * and run with it. Would love to see it done right.
+ *
+ * One thing this version doesn't do: integrate with the larv.ai staking
+ * contract (0xC9E377FB98a1aA6Ecf4B553cE1b57940121213bf). Eligibility here
+ * is based on wallet balance, not stake — meaning larv.ai stakers aren't
+ * covered unless they also hold 1M in their wallet. A production version
+ * could read totalStaked() and getActiveStakes() from the larv.ai contract
+ * to include stakers and use their real stake duration for weighting.
+ * That's the version this community deserves.
+ *
+ * Use at your own risk.
+ */
 
-// CLAWD Rain — a community tipping tool built by a CLAWD community member
-// using LeftClaw Services beta.
-//
-// To the CLAWD core team: if you like this idea and want to build a
-// production-grade version, consider this a proof of concept — take it
-// and run with it. Would love to see it done right.
-//
-// One thing this version doesn't do: integrate with the larv.ai staking
-// contract (0xC9E377FB98a1aA6Ecf4B553cE1b57940121213bf). Eligibility here
-// is based on wallet balance, not stake — meaning larv.ai stakers aren't
-// covered unless they also hold 1M in their wallet. A production version
-// could read totalStaked() and getActiveStakes() from the larv.ai contract
-// to include stakers and use their real stake duration for weighting.
-// That's the version this community deserves.
-//
-// Use at your own risk.
+/*
+ * CLAWD Rain — a community tipping tool built by a CLAWD community member
+ * using LeftClaw Services beta.
+ *
+ * To the CLAWD core team: if you like this idea and want to build a
+ * production-grade version, consider this a proof of concept — take it
+ * and run with it. Would love to see it done right.
+ *
+ * One thing this version doesn't do: integrate with the larv.ai staking
+ * contract (0xC9E377FB98a1aA6Ecf4B553cE1b57940121213bf). Eligibility here
+ * is based on wallet balance, not stake — meaning larv.ai stakers aren't
+ * covered unless they also hold 1M in their wallet. A production version
+ * could read totalStaked() and getActiveStakes() from the larv.ai contract
+ * to include stakers and use their real stake duration for weighting.
+ * That's the version this community deserves.
+ *
+ * Use at your own risk.
+ */
 
 // ---- constants ----------------------------------------------------------------
 const CLAWD_DECIMALS = 18;
