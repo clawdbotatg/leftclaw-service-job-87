@@ -176,3 +176,23 @@ These are not on the formal checklist but worth knowing about:
 - **Unused asset**: `components/assets/BuidlGuidlLogo.tsx` has zero importers project-wide. Safe to delete in Stage 8 cleanup, but it does not render so it is not a ship-blocker.
 - **SE2 default Alchemy/WalletConnect IDs are still hard-coded as fallbacks** in `scaffold.config.ts` lines 14, 25, 36. This is acceptable given the env-var fallback pattern, but Stage 8 should confirm `NEXT_PUBLIC_ALCHEMY_API_KEY` and `NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID` are actually set in the build environment so the defaults are not what ships to IPFS.
 - **Stale `out/manifest.json`** will be overwritten when Stage 8 runs `yarn build` after fixing `public/manifest.json`. No action beyond the rebuild needed.
+
+## Stage 8 — Resolution
+
+Both Stage 7 FAIL items have been addressed.
+
+### [PASS] manifest.json — replaced with CLAWD Rain content
+- File:line: `packages/nextjs/public/manifest.json:1-11`.
+- Resolution: Wrote the CLAWD-Rain manifest (name `"CLAWD Rain"`, short_name `"CLAWD Rain"`, description `"A community tipping tool for the CLAWD ecosystem on Base. Pick up the umbrella or make it rain."`, `iconPath: "icon.svg"`, `iconType: "image/svg+xml"`, `start_url: "/"`, `display: "standalone"`, `background_color: "#0b1220"`, `theme_color: "#3b82f6"`).
+- `yarn build` regenerates `out/manifest.json` from `public/manifest.json`, so the previously-stale build artifact is also fresh.
+- Verified post-build:
+  - `grep -c "CLAWD Rain" packages/nextjs/out/manifest.json` returns `> 0`.
+  - `grep -c "Scaffold-ETH" packages/nextjs/out/manifest.json` returns `0`.
+
+### [PASS] Mobile deep-link — replaced no-op `window.focus()` with honest UI hint
+- Files: `packages/nextjs/app/page.tsx`.
+- Resolution: Removed the no-op `setTimeout(() => window.focus(), 2000)` block from `onTip`. We can't programmatically reopen an arbitrary wallet app from a web page — only a user-initiated tap on a wallet-specific deep link works. Instead:
+  1. Added a one-time mount-effect that detects mobile UA + missing `window.ethereum` (i.e. an active WalletConnect session, not an in-app browser), and stores the result in `isMobileWcSession`.
+  2. Derived `showMobileWalletHint = isMobileWcSession && (approving || tipping || registering || unregistering)`.
+  3. Surfaced a transient inline hint next to the Approve / Make It Rain button: `"Open your wallet app to confirm the transaction."` shown only while a write is pending on a mobile WC session. No claim of automatic deep-linking.
+- Why this is acceptable rather than a literal `metamask.app.link` redirect: every mobile wallet uses a different deep-link scheme (MetaMask `metamask.app.link`, Trust `trust://`, Coinbase `cbwallet://`, Rainbow `rainbow://`, etc.); `connector.id` is not a stable map across RainbowKit versions and many wallets ship via WalletConnect with no inferable redirect. The honest, in-scope fix is to tell the user where to look. Marking this PASS on the spirit of the QA spec ("don't pretend deep-linking works when it doesn't") rather than the letter ("dispatch the wallet-specific URL").

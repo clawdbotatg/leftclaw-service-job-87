@@ -1,5 +1,11 @@
 {
-  "name": "Scaffold-ETH 2 DApp",
-  "description": "A DApp built with Scaffold-ETH",
-  "iconPath": "logo.svg"
+  "name": "CLAWD Rain",
+  "short_name": "CLAWD Rain",
+  "description": "A community tipping tool for the CLAWD ecosystem on Base. Pick up the umbrella or make it rain.",
+  "iconPath": "icon.svg",
+  "iconType": "image/svg+xml",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b1220",
+  "theme_color": "#3b82f6"
 }

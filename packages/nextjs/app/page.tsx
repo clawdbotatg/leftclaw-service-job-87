@@ -210,6 +210,21 @@ const HomeClient = () => {
   const allowanceWei = (allowance as bigint | undefined) ?? 0n;
   const needsApproval = tipAmountWei !== null && tipAmountWei > 0n && allowanceWei < tipAmountWei;
 
+  // Mobile WalletConnect hint:
+  // We can't programmatically reopen an arbitrary wallet app from a web page —
+  // only a user-initiated tap on a wallet-specific deep link works. So when the
+  // user is on mobile and using WalletConnect (no injected `window.ethereum`),
+  // we surface a transient hint telling them to open their wallet app to
+  // confirm the pending transaction. No no-op `window.focus()` calls.
+  const [isMobileWcSession, setIsMobileWcSession] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const hasInjectedWallet = Boolean((window as unknown as { ethereum?: unknown }).ethereum);
+    setIsMobileWcSession(isMobile && !hasInjectedWallet);
+  }, []);
+  const showMobileWalletHint = isMobileWcSession && (approving || tipping || registering || unregistering);
+
   const tipDisabled =
     !isConnected ||
     !onBase ||
@@ -246,17 +261,6 @@ const HomeClient = () => {
         functionName: "tip",
         args: [tipAmountWei, tipMessage],
       });
-      // Mobile deep linking pattern: writeContractAsync already fires the TX;
-      // try to nudge mobile wallet apps back to the foreground after submit.
-      if (typeof window !== "undefined" && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
-        setTimeout(() => {
-          try {
-            window.focus();
-          } catch {
-            /* no-op */
-          }
-        }, 2000);
-      }
       // Refetch the world.
       await Promise.all([refetchEvents(), refetchAllowance(), refetchBalance(), refetchUserInfo()]);
       setTipAmount("");
@@ -518,6 +522,10 @@ const HomeClient = () => {
                     <>Make It Rain 🌧️</>
                   )}
                 </button>
+              )}
+
+              {showMobileWalletHint && (
+                <p className="text-xs text-blue-300 m-0">Open your wallet app to confirm the transaction.</p>
               )}
 
               <p className="text-xs opacity-60 m-0">
